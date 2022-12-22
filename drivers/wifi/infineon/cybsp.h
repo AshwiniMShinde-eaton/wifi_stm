@@ -20,6 +20,9 @@
 #include <cyhal_sdio.h>
 #include <zephyr/device.h>
 #include <zephyr/dt-bindings/pinctrl/ifx_cat1-pinctrl.h>
+//ANN added below 2 lines
+#include <zephyr/dt-bindings/pinctrl/stm32-pinctrl.h>
+//#include "cyhal_gpio.h"
 
 /* WIFI interface types */
 #define CYBSP_SDIO_INTERFACE             (0)
@@ -39,10 +42,11 @@ cyhal_sdio_t *cybsp_get_wifi_sdio_obj(void);
 
 
 /* WiFi host-wake IRQ event */
-#define CYBSP_WIFI_HOST_WAKE_IRQ_EVENT  (CYHAL_GPIO_IRQ_RISE)
+#define CYBSP_WIFI_HOST_WAKE_IRQ_EVENT  (1 << 0) //(CYHAL_GPIO_IRQ_RISE)
 
 /* WiFi host-wake IRQ event */
-#define DT_WIFI_SDIO_NODE               DT_COMPAT_GET_ANY_STATUS_OKAY(infineon_cyw43xxx_wifi_sdio)
+//ANN modified below
+#define DT_WIFI_SDIO_NODE                 DT_COMPAT_GET_ANY_STATUS_OKAY(st_stm32_wifi_sdio)
 
 /* WiFi control pins */
 #if !defined(CYBSP_WIFI_WL_REG_ON)
@@ -50,7 +54,9 @@ cyhal_sdio_t *cybsp_get_wifi_sdio_obj(void);
 		#define CYBSP_WIFI_WL_REG_ON \
 	DT_GET_CYHAL_GPIO_FROM_DT_GPIOS(DT_WIFI_SDIO_NODE, wifi_reg_on_gpios)
 	#else
-		#define CYBSP_WIFI_WL_REG_ON   NC
+		//ANN modified below
+		//#define CYBSP_WIFI_WL_REG_ON   NC
+		#define CYBSP_WIFI_WL_REG_ON   PB5
 	#endif
 #endif
 
@@ -59,7 +65,9 @@ cyhal_sdio_t *cybsp_get_wifi_sdio_obj(void);
 		#define CYBSP_WIFI_HOST_WAKE \
 	DT_GET_CYHAL_GPIO_FROM_DT_GPIOS(DT_WIFI_SDIO_NODE, wifi_host_wake_gpios)
 	#else
-		#define CYBSP_WIFI_HOST_WAKE   NC
+		//ANN modified below
+		//#define CYBSP_WIFI_HOST_WAKE   NC
+		#define CYBSP_WIFI_HOST_WAKE   PC7
 	#endif
 #endif
 

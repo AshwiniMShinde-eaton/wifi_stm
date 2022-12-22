@@ -1,0 +1,8 @@
+# NEBULA rev 2.0 F429ZI  board configuration
+
+# Copyright (c) 2017 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NEBULA_F429ZI
+	bool "NEBULA-2 F429ZI Development Board"
+	depends on SOC_STM32F429XX

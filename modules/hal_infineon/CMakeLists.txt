@@ -19,6 +19,9 @@ if (CONFIG_SOC_FAMILY_INFINEON_CAT1A OR CONFIG_SOC_FAMILY_PSOC6)
   add_subdirectory(mtb-pdl-cat1)
 endif()
 
+###ASH
+add_subdirectory(core-lib)
+
 
 ## Add mtb-hal-cat1 sources for CAT1 devices
 if (CONFIG_SOC_FAMILY_INFINEON_CAT1A)
@@ -26,11 +29,13 @@ if (CONFIG_SOC_FAMILY_INFINEON_CAT1A)
 endif()
 
 ## Add abstraction-rtos sources
-if (CONFIG_SOC_FAMILY_INFINEON_CAT1)
+###ASH
+#if (CONFIG_SOC_FAMILY_INFINEON_CAT1)
   add_subdirectory(abstraction-rtos)
-endif()
+#endif()
 
 ## Add whd-bsp-integration for CYW43xx WIFI devices
 if (CONFIG_WIFI_CYW43XXX)
   add_subdirectory(whd-bsp-integration)
 endif()
+

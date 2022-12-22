@@ -1,0 +1,42 @@
+# NUCLEO-144 F429ZI board configuration
+
+# Copyright (c) 2017 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NEBULA_F429ZI
+
+config BOARD
+	default "nebula_f429zi"
+
+if WIFI || BT
+
+# Select CYW43XXX part and module
+choice CYW43XXX_PART
+	default CYW4343W
+endchoice
+
+choice CYW4343W_MODULE
+	default CYW4343W_MURATA_1DX
+endchoice
+
+endif # WIFI || BT
+
+if WIFI
+
+config WIFI_CYW43XXX
+	default y
+
+# Enable L2 Ethernet
+config NET_L2_ETHERNET
+	default y
+
+endif # WIFI
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+endif # NETWORKING
+
+endif # BOARD_NEBULA_F429ZI

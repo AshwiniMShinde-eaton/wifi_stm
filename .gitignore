@@ -62,3 +62,4 @@ TAGS
 tags
 
 .idea
+/boards/arm/nebula_f429zi/nucleo_f429zi.dts

@@ -65,6 +65,7 @@ struct net_if;
 #define NET_MGMT_GET_COMMAND(mgmt_request)	\
 	(mgmt_request & NET_MGMT_COMMAND_MASK)
 
+#define CONFIG_NET_MGMT_EVENT 1
 
 /* Useful generic definitions */
 #define NET_MGMT_LAYER_L2		1

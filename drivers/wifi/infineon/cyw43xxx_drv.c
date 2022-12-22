@@ -20,7 +20,7 @@
  * @brief CYW43xxx wifi driver.
  */
 
-#define WIFI_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(infineon_cyw43xxx_wifi_sdio)
+#define WIFI_NODE DT_COMPAT_GET_ANY_STATUS_OKAY( st_stm32_wifi_sdio )
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(infineon_cyw43xxx_wifi, CONFIG_WIFI_LOG_LEVEL);
@@ -39,6 +39,12 @@ LOG_MODULE_REGISTER(infineon_cyw43xxx_wifi, CONFIG_WIFI_LOG_LEVEL);
 #include <cybsp_wifi.h>
 #include <cybsp.h>
 
+// ANN added below lines
+#include "cy_utils.h"
+#include "cyhal_gpio.h"
+#include <zephyr/drivers/pinctrl.h>
+// #include "cyhal_sdhc.h"
+#include "cyhal_hw_resources.h"
 #define DEV_DATA(dev) \
 	((struct infineon_cyw43xxx_wifi_runtime *)(dev)->data)
 
@@ -101,7 +107,7 @@ struct infineon_cyw43xxx_wifi_runtime {
 #endif
 };
 
-static whd_interface_t cyw43xxx_if;
+whd_interface_t cyw43xxx_if;
 static const whd_event_num_t sta_link_events[] = {
 	WLC_E_LINK, WLC_E_DEAUTH_IND, WLC_E_DISASSOC_IND,
 	WLC_E_PSK_SUP, WLC_E_CSA_COMPLETE_IND, WLC_E_NONE
@@ -117,7 +123,7 @@ static struct k_thread cyw43xxx_wifi_event_thread;
 
 cyhal_sdio_t *cybsp_get_wifi_sdio_obj(void)
 {
-	return &sdio_obj;
+	return ( &sdio_obj );
 }
 
 whd_interface_t cyw43xx_get_whd_interface(void)
@@ -324,27 +330,25 @@ static int eth_infineon_cyw43xxx_dev_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	cy_rslt_t ret = CY_RSLT_SUCCESS;
-	cyhal_gpio_t sdio_cmd =
-		DT_GET_CYHAL_GPIO_FROM_DT_GPIOS(DT_WIFI_SDIO_NODE, wifi_sdio_cmd_gpios);
 
-	cyhal_gpio_t sdio_clk =
-		DT_GET_CYHAL_GPIO_FROM_DT_GPIOS(DT_WIFI_SDIO_NODE, wifi_sdio_clk_gpios);
+	LOG_INF( "inside init" );
 
-	cyhal_gpio_t sdio_d0 =
-		DT_GET_CYHAL_GPIO_FROM_DT_GPIOS(DT_WIFI_SDIO_NODE, wifi_sdio_d0_gpios);
+//sample test of GPIO
+   /*cy_rslt_t result = cyhal_gpio_init(PB1, 1,CYHAL_GPIO_DIR_OUTPUT,
+                                       8,CYHAL_GPIO_DRIVE_PULLUP, true);*/
 
-	cyhal_gpio_t sdio_d1 =
-		DT_GET_CYHAL_GPIO_FROM_DT_GPIOS(DT_WIFI_SDIO_NODE, wifi_sdio_d1_gpios);
+   cyhal_gpio_init(PB1, CYHAL_GPIO_DIR_OUTPUT, CYHAL_GPIO_DRIVE_PULLUP, true);
 
-	cyhal_gpio_t sdio_d2 =
-		DT_GET_CYHAL_GPIO_FROM_DT_GPIOS(DT_WIFI_SDIO_NODE, wifi_sdio_d2_gpios);
+   //cy_rslt_t result = cyhal_gpio_init(PB1, 1,1,8,2, true);
+    cyhal_gpio_write(PB1, true);
 
-	cyhal_gpio_t sdio_d3 =
-		DT_GET_CYHAL_GPIO_FROM_DT_GPIOS(DT_WIFI_SDIO_NODE, wifi_sdio_d3_gpios);
+	ret = cyhal_sdio_init( &sdio_obj, NC, NC,
+						   NC, NC, NC, NC );
+	//k_msleep(1000);
+    //for(int i=0;i<0xFFFF;i++);
 
-	ret = cyhal_sdio_init(&sdio_obj, sdio_cmd, sdio_clk,
-			      sdio_d0, sdio_d1, sdio_d2, sdio_d3);
-	if (ret != CY_RSLT_SUCCESS) {
+	if ( ret != CY_RSLT_SUCCESS )
+	{
 		LOG_ERR("cyhal_sdio_init failed ret = %d \r\n", ret);
 	}
 
