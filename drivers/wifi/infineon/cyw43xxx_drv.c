@@ -337,10 +337,20 @@ static int eth_infineon_cyw43xxx_dev_init(const struct device *dev)
    /*cy_rslt_t result = cyhal_gpio_init(PB1, 1,CYHAL_GPIO_DIR_OUTPUT,
                                        8,CYHAL_GPIO_DRIVE_PULLUP, true);*/
 
-   cyhal_gpio_init(PB1, CYHAL_GPIO_DIR_OUTPUT, CYHAL_GPIO_DRIVE_PULLUP, true);
+   cyhal_gpio_init(PB8, CYHAL_GPIO_DIR_OUTPUT, CYHAL_GPIO_DRIVE_PULLUP, true);
+//   cyhal_gpio_init(PB9, CYHAL_GPIO_DIR_OUTPUT, CYHAL_GPIO_DRIVE_PULLUP, true);
 
    //cy_rslt_t result = cyhal_gpio_init(PB1, 1,1,8,2, true);
-    cyhal_gpio_write(PB1, true);
+   cyhal_gpio_write(PB8, false);// Power off the module and then turn on
+   k_msleep(5000);
+   cyhal_gpio_write(PB8, true);// Host reg on - Active high
+
+//   cyhal_gpio_write(PB9, false);// Host wake - active low - connected to ground on board
+
+	uint32_t soc_sys_clk_freq;
+
+	soc_sys_clk_freq = HAL_RCC_GetSysClockFreq();
+	printk("\n soc_sys_clk_freq=%d", soc_sys_clk_freq);
 
 	ret = cyhal_sdio_init( &sdio_obj, NC, NC,
 						   NC, NC, NC, NC );

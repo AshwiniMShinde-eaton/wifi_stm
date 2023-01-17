@@ -27,17 +27,14 @@
 
 uint32_t whd_chip_set_chip_id(whd_driver_t whd_driver, uint16_t id)
 {
-    //ANN modified below
-	whd_driver->chip_info.chip_id = 43430;
-	//whd_driver->chip_info.chip_id = id;
+	whd_driver->chip_info.chip_id = id;
 
     return 0;
 }
 
 uint16_t whd_chip_get_chip_id(whd_driver_t whd_driver)
 {
-    //ANN modified below
-	whd_driver->chip_info.chip_id = 43430;
+	printk("\n CHIP_ID = %d",whd_driver->chip_info.chip_id );
 	return whd_driver->chip_info.chip_id;
 }
 
