@@ -51,9 +51,6 @@
 extern "C" {
 #endif /* __cplusplus */
 
-//ANN-U5agno added 2 lines
-//#pragma GCC push_options
-//#pragma GCC optimize ("O0")
 
 /***************************************************************************************************
  *      Private macros
@@ -392,12 +389,10 @@ void cyhal_gpio_register_callback(cyhal_gpio_t pin, cyhal_gpio_event_callback_t 
     /* Check the parameters */
     if ((pin_number < CYHAL_MAX_EXTI_NUMBER) && (callback != NULL))
     {
-        //ANN-U5agno commeted critical section part
-    	//uint32_t savedIntrStatus = cyhal_system_critical_section_enter();
+        //uint32_t savedIntrStatus = cyhal_system_critical_section_enter();
         _exti_callbacks_info[pin_number].callback      = callback;
         _exti_callbacks_info[pin_number].callback_args = callback_arg;
         _exti_callbacks_info[pin_number].pin           = pin;
-        //ANN-U5agno commeted critical section part
         //cyhal_system_critical_section_exit(savedIntrStatus);
     }
     else
@@ -662,15 +657,20 @@ static void _stm32_cyhal_gpio_enable_irq(uint32_t pin_number, uint32_t priority,
         EXTI14_IRQn, /* IRQ for EXTI line 14 */
         EXTI15_IRQn, /* IRQ for EXTI line 15 */
     };
-    #endif /* if defined (TARGET_STM32H7xx) */
-//ANN-U5agno commented IRQ stuff
-   // IRQn = exti_table[pin_number];
+
+    #else //ANN added this temporarily (for warning removal) as the file will be implimented by Zephyr pinctrl feature
+    const IRQn_Type exti_table[] =
+        {
+            0,
+        };
+	#endif
+    IRQn = exti_table[pin_number];
 
     /* Enable/Disable IRQ */
     if (en_irq)
     {
-        //ANN-U5agno HAL_NVIC_SetPriority(IRQn, priority, 0);
-        //ANN-U5agno HAL_NVIC_EnableIRQ(IRQn);
+        HAL_NVIC_SetPriority(IRQn, priority, 0);
+        HAL_NVIC_EnableIRQ(IRQn);
     }
     else
     {
@@ -681,13 +681,11 @@ static void _stm32_cyhal_gpio_enable_irq(uint32_t pin_number, uint32_t priority,
             (IRQn == EXTI3_IRQn) || (IRQn == EXTI4_IRQn))
         #endif /* if defined (TARGET_STM32H7xx) */
         {
-            //ANN-U5agno HAL_NVIC_DisableIRQ(IRQn);
+            HAL_NVIC_DisableIRQ(IRQn);
         }
     }
 }
 
-//ANN-U5agno added below
-//#pragma GCC pop_options
 
 #if defined(__cplusplus)
 }

@@ -42,9 +42,6 @@ extern "C"
 {
 #endif
 
-#pragma GCC push_options
-#pragma GCC optimize ("O0")
-
 #include "cyhal_sdio.h"
 #include "cyabs_rtos.h"
 #include "stm32_cyhal_sdio_ex.h"
@@ -53,8 +50,7 @@ extern "C"
 
 #include "stm32u5xx_ll_sdmmc.h"
 #include "stm32u5xx_ll_rcc.h"
-#include "stm32u5xx_hal_sd.h" //ANN added this header
-//#include "stm32f4xx_hal_dma.h"
+#include "stm32u5xx_hal_sd.h"
 #include "stm32u575xx.h"
 #include "whd_debug.h"
 #include <zephyr/kernel.h>
@@ -68,11 +64,6 @@ extern "C"
 /***************************************************************************************************
  *      Private macros
  **************************************************************************************************/
-
-//#define __SDMMC_GET_FLAG(SDMMCx, SDIO_FLAG_CTIMEOUT) __SDIO_GET_FLAG(SDMMCx, SDIO_FLAG_CTIMEOUT)
-//#define __SDMMC_CLEAR_FLAG(SDMMCx, SDIO_FLAG_CCRCFAIL) __SDIO_CLEAR_FLAG(SDMMCx, SDIO_FLAG_CCRCFAIL)
-//#define __SDMMC_CMDTRANS_ENABLE(obj->hsd->Instance) __SDIO_CMDTRANS_ENABLE(obj->hsd->Instance)
-
 
 /* Number of cycles for read/write operation complete */
 #define _CYHAL_SDIO_RW_RETRY_CYCLES             (1000U)
@@ -122,9 +113,9 @@ extern "C"
     #define _CYHAL_SDIO_DMA_BUFFER_SIZE         (1568 / 4)  /* size in words */
 #endif /* !defined (_CYHAL_SDIO_DMA_BUFFER_SIZE) */
 
-#define MY_SDIO_IRQ  SDMMC1_IRQn       /* device uses IRQ 78 */
-#define MY_SDIO_PRIO  CYHAL_SDIO_IRQ_PRIORITY //2       /* device uses interrupt priority 2 *//* argument passed to my_isr(), in this case a pointer to the device */
-#define MY_IRQ_FLAGS 0       /* IRQ flags */
+#define MY_SDIO_IRQ  		SDMMC1_IRQn       			/* device uses IRQ 78 */
+#define MY_SDIO_PRIO  		CYHAL_SDIO_IRQ_PRIORITY     /* device uses interrupt priority 2 *//* argument passed to my_isr(), in this case a pointer to the device */
+#define MY_IRQ_FLAGS 		0       					/* IRQ flags */
 
 /***************************************************************************************************
  *      Private variables
@@ -198,15 +189,7 @@ cy_rslt_t cyhal_sdio_init(cyhal_sdio_t* obj, cyhal_gpio_t cmd, cyhal_gpio_t clk,
     (void)data1;
     (void)data2;
     (void)data3;
-    uint32_t sdmmc_clk, sdmmc_clk1, sdmmc_clk2;
-
-
-    /* ANN: Wiced Turn on SDIO IRQ */
-   // SDIO->ICR = (uint32_t) 0xffffffff;
-
-    //ANN: WICED - SDIO_DeInit( );
-   ///< __HAL_RCC_SDMMC1_CLK_ENABLE();
-   ///< __HAL_RCC_SDMMC1_CLK_DISABLE();
+    uint32_t sdmmc_clk;
 
     hsd.Instance = SDMMC1;
     obj->hsd = &hsd;
@@ -228,36 +211,22 @@ cy_rslt_t cyhal_sdio_init(cyhal_sdio_t* obj, cyhal_gpio_t cmd, cyhal_gpio_t clk,
            HAL_SD_MspInit(obj->hsd);
        }
 
-//       __HAL_RCC_SDMMC_CONFIG(RCC_SDMMCCLKSOURCE_PLL1);
-//       sdmmc_clk1 = HAL_RCCEx_GetPeriphCLKFreq(STM32_RCC_PERIPHCLK_SDMMC);
+		/* Override default SDMMC clock source and set it as PLL1 */
        __HAL_RCC_CLK48_CONFIG(RCC_CLK48CLKSOURCE_PLL1);
-       sdmmc_clk1 = HAL_RCCEx_GetPeriphCLKFreq(STM32_RCC_PERIPHCLK_SDMMC);
-       printk("\n sdmmc_clk1=%d", sdmmc_clk1);
-//       __HAL_RCC_CLK48_CONFIG(RCC_CLK48CLKSOURCE_MSIK);
-//       sdmmc_clk1 = HAL_RCCEx_GetPeriphCLKFreq(STM32_RCC_PERIPHCLK_SDMMC);
 
-//ANN added below
-    ///< hsd.Init.ClockDiv = (uint8_t)0; //ANN from WICED
     hsd.Init.ClockEdge = SDMMC_CLOCK_EDGE_RISING;
     hsd.Init.ClockPowerSave = SDMMC_CLOCK_POWER_SAVE_DISABLE;
-    hsd.Init.BusWide = SDMMC_BUS_WIDE_4B; //SDMMC_BUS_WIDE_1B; //ANN: as per WICED
+    hsd.Init.BusWide = SDMMC_BUS_WIDE_4B;
     hsd.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE;
 
     /* Init Clock should be less or equal to 400Khz */
     sdmmc_clk = HAL_RCCEx_GetPeriphCLKFreq(STM32_RCC_PERIPHCLK_SDMMC);
-    sdmmc_clk2 = LL_RCC_GetSDMMCClockFreq(LL_RCC_SDMMC_CLKSOURCE);
-    printk("\n sdmmc_clk=%d sdmmc_clk2=%d", sdmmc_clk, sdmmc_clk2);
 
-//    hsd.Init.ClockDiv = 3; //4//3//1;//_stm32_safe_divide(sdmmc_clk, 2U * _CYHAL_SDIO_400KHZ);
     hsd.Init.ClockDiv = _stm32_safe_divide(sdmmc_clk, 2U * _CYHAL_SDIO_400KHZ);
-    printk("\n Div = %d", hsd.Init.ClockDiv );
+    //printk("\n Div = %d", hsd.Init.ClockDiv );
     hsd.State         = HAL_SD_STATE_BUSY;
 
     _stm32_sdio_enable_hw_block(obj);
-
-    sdmmc_clk = HAL_RCCEx_GetPeriphCLKFreq(STM32_RCC_PERIPHCLK_SDMMC);
-    sdmmc_clk2 = LL_RCC_GetSDMMCClockFreq(LL_RCC_SDMMC_CLKSOURCE);
-    printk("\n AFTER sdmmc_clk=%d sdmmc_clk2=%d", sdmmc_clk, sdmmc_clk2);
 
     obj->hsd->ErrorCode = HAL_SD_ERROR_NONE;
 
@@ -265,62 +234,11 @@ cy_rslt_t cyhal_sdio_init(cyhal_sdio_t* obj, cyhal_gpio_t cmd, cyhal_gpio_t clk,
 
     obj->hsd->State = HAL_SD_STATE_READY;
 
-
-    /*************
-    (void)SDMMC_Init(obj->hsd->Instance, hsd.Init);
-    (void)SDMMC_PowerState_ON(obj->hsd->Instance);
-    (void)SDMMC_SetSDMMCReadWaitMode(obj->hsd->Instance, SDMMC_READ_WAIT_MODE_CLK);
-
-    // Check the SD handle allocation
-    if (obj->hsd == NULL)
-    {
-        return (cy_rslt_t)HAL_ERROR;
-    }
-
-    //hsd.Instance->CLKCR |= SDMMC_CLKCR_CLKEN;
-
-        // Initialize the error code
-     obj->hsd->ErrorCode = HAL_SD_ERROR_NONE;
-
-     // store object in handle context
-     obj->hsd->Context = (uint32_t)obj;
-
-     // Initialize the SD state
-     obj->hsd->State = HAL_SD_STATE_READY;
-
-     SDMMC1->MASK = 0; //ANN disabling all SDIO interrupts
-
-//     my_sdio_isr_installer();
-//     my_dma2_isr_installer();
- *
- */
+	///< Connect IRQ handler
     my_sdio_isr_installer();
      // Enable interrupts
      _stm32_sdio_enable_irq(obj->hsd->Instance, CYHAL_SDIO_IRQ_PRIORITY, true);
 
-    // Enable SDIO block
-   ////<  _stm32_sdio_enable_hw_block(obj);
-
-
-    // Init Clock should be less or equal to 400Khz
-    //sdmmc_clk = LL_RCC_GetSDIOClockFreq(LL_RCC_SDIO_CLKSOURCE);
-
-    //__HAL_RCC_SDIO_CLK_DISABLE();
-
-  //  hsd.Instance->CLKCR |= SDIO_CLKCR_CLKEN;
-
-
-    /*   // Initialize the error code
-    obj->hsd->ErrorCode = HAL_SD_ERROR_NONE;
-
-    // store object in handle context
-    obj->hsd->Context = (uint32_t)obj;
-
-    // Initialize the SD state
-    obj->hsd->State = HAL_SD_STATE_READY;*/
-
-    // Enable interrupts
-   ////< _stm32_sdio_enable_irq(obj->hsd->Instance, CYHAL_SDIO_IRQ_PRIORITY, true);
     return CY_RSLT_SUCCESS;
 }
 
@@ -389,7 +307,6 @@ cy_rslt_t cyhal_sdio_send_cmd(const cyhal_sdio_t* obj, cyhal_transfer_t directio
         /* CMD0 */
         case CYHAL_SDIO_CMD_GO_IDLE_STATE:
             ret = SDMMC_CmdGoIdleState(obj->hsd->Instance);
-//            printk("\nIDLE");
             break;
 
         /* CMD3 */
@@ -399,41 +316,34 @@ cy_rslt_t cyhal_sdio_send_cmd(const cyhal_sdio_t* obj, cyhal_transfer_t directio
             assert_param(response != NULL);
             ret       = SDMMC_CmdSetRelAdd(obj->hsd->Instance, &resp);
             *response = resp;
-
-//            printk("\nR_ADDR");
             break;
         }
 
         /* CMD5 */
         case CYHAL_SDIO_CMD_IO_SEND_OP_COND:
             ret = _stm32_sdio_cmd_send_op_cond(obj->hsd->Instance);
-//            printk("\nOP_COND");
             break;
 
         /* CMD7 */
         case CYHAL_SDIO_CMD_SELECT_CARD:
             ret = SDMMC_CmdSelDesel(obj->hsd->Instance, (uint64_t)argument << 16);
-//            printk("\nSEL_CARD");
             break;
 
         /* CMD52 */
         case CYHAL_SDIO_CMD_IO_RW_DIRECT:
             /* this one already has  != NULL check inside */
             ret = _stm32_sdio_cmd_rw_direct(obj->hsd->Instance, argument, response);
-//            printk("\nIO_RW_DIR");
             break;
 
         /* CMD53 */
         case CYHAL_SDIO_CMD_IO_RW_EXTENDED:
             /* this one already has  != NULL check inside */
             ret = _stm32_sdio_cmd_rw_extended(obj->hsd->Instance, argument, response);
-//            printk("\nIO_RW_EXT");
             break;
 
         case CYHAL_SDIO_CMD_GO_INACTIVE_STATE:
         default:
             ret = CYHAL_SDIO_RSLT_ERR_BAD_PARAM;
-//            printk("\n default");
             break;
     }
     return ret;
@@ -449,7 +359,6 @@ cy_rslt_t cyhal_sdio_bulk_transfer(cyhal_sdio_t* obj, cyhal_transfer_t direction
 {
     cy_rslt_t result = CYHAL_SDIO_RSLT_CANCELED;
     CYHAL_ALIGN_DMA_BUFFER(static uint32_t  _temp_dma_buffer[_CYHAL_SDIO_DMA_BUFFER_SIZE]);
-//    printk("\nBulk_T");
 
     /* Check data buffer if aligned on 32-bytes (needed for cache maintenance purpose),
      * and Length is multiple by block size. If NOT, use internal buffer for DMA */
@@ -584,10 +493,9 @@ cy_rslt_t cyhal_sdio_bulk_transfer(cyhal_sdio_t* obj, cyhal_transfer_t direction
                                         SDMMC_IT_DATAEND | SDMMC_ICR_SDIOITC;
 
             /* Wait for transfer complete */
-//            result = cy_rtos_get_semaphore(&sdio_transfer_sema, _CYHAL_SDIO_TRANSFER_SEMA_TIMEOUT,
-//                                           false);
-            result = cy_rtos_get_semaphore(&sdio_transfer_sema, CY_RTOS_NEVER_TIMEOUT,
+            result = cy_rtos_get_semaphore(&sdio_transfer_sema, _CYHAL_SDIO_TRANSFER_SEMA_TIMEOUT,
                                            false);
+
             if (result != CY_RSLT_SUCCESS)
             {
             	printk("ERROR: cyhal_sdio_bulk_transfer: timeout \n");
@@ -1215,9 +1123,6 @@ void HAL_SD_MspInit(SD_HandleTypeDef* hsd)
     PC8     ------> SDMMC1_D0
     PC9     ------> SDMMC1_D1
     */
-    //ANN modified below as PC12 CLK may not have any
-    /*GPIO_InitStruct.Pin = GPIO_PIN_10|GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_8
-                          |GPIO_PIN_9;*/
 
     GPIO_InitStruct.Pin = GPIO_PIN_12;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
@@ -1251,14 +1156,6 @@ void HAL_SD_MspInit(SD_HandleTypeDef* hsd)
   }
 
 }
-
-
-
-
-
-
-
-#pragma GCC pop_options
 
 #if defined(__cplusplus)
 }
